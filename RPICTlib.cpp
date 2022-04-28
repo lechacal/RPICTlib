@@ -72,7 +72,7 @@ void SignalNode::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
       sample = analogRead(inPin);
       if (sample==ADC_COUNTS-1) {
         err=2; 
-        return;
+        //return;
       }
 
       // IIR Low pass filter to center waveform,
@@ -168,7 +168,7 @@ void PowerNode::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
       
       if ((sampleV==ADC_COUNTS-1) || (sampleI==ADC_COUNTS-1)) {
         err=2;
-        return ;
+        //return ;
       }
 
       // IIR Low pass filter to center waveform,
@@ -366,7 +366,7 @@ void SignalNode_mcp3208::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   
       if (sample==ADC_COUNTS-1) {
         err=2; 
-        return ;
+        //return ;
       }
 
       // IIR Low pass filter to center waveform,
@@ -470,7 +470,7 @@ void PowerNode_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
       
       if ((sampleV==ADC_COUNTS-1) || (sampleI==ADC_COUNTS-1)) {
         err=2;
-        return;
+        //return;
       }
 
       // IIR Low pass filter to center waveform,
@@ -732,11 +732,11 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
 
       if ((sampleV1 == ADC_COUNTS - 1) || (sampleI1 == ADC_COUNTS - 1)) {
         err = 2;
-        return;
+        //return;
       }
       else if ((sampleV2 == ADC_COUNTS - 1) || (sampleI2 == ADC_COUNTS - 1)) {
         err = 2;
-        return;
+        //return;
       }
 
       // IIR Low pass filter to center waveform,
@@ -908,15 +908,15 @@ void ThreeWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterv
 
       if ((sampleV1 == ADC_COUNTS - 1) || (sampleI1 == ADC_COUNTS - 1)) {
         err = 2;
-        return;
+        //return;
       }
       else if ((sampleV2 == ADC_COUNTS - 1) || (sampleI2 == ADC_COUNTS - 1)) {
         err = 2;
-        return;
+        //return;
       }
       else if ((sampleV3 == ADC_COUNTS - 1) || (sampleI3 == ADC_COUNTS - 1)) {
         err = 2;
-        return;
+        //return;
       }
 
       // IIR Low pass filter to center waveform,
