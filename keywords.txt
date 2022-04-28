@@ -1,0 +1,31 @@
+#######################################
+# Syntax Coloring Map for DFR_Key
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SignalNode	KEYWORD1
+PowerNode	KEYWORD1
+SignalNode_mcp3208	KEYWORD1
+PowerNode_mcp3208	KEYWORD1
+TwoWattMeter_mcp3208    KEYWORD1
+ThreeWattMeter_mcp3208  KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+calcIrms	        KEYWORD2
+calcVI                  KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+ 
+ADC_BITS LITERAL1
+ADC_COUNTS LITERAL1
+ADC_REF LITERAL1
+

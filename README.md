@@ -1,2 +1,2 @@
 # RPICTlib
- ARduino Library for RPICT hardware
+ Arduino Library for RPICT hardware
