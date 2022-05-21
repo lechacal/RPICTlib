@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_5_0
+#define RPICTlib_1_5_1
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
