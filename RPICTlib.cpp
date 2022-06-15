@@ -678,8 +678,11 @@ void FrequencyNode_mcp3208::calcFreq( uint16_t xpT)
 
 
 
-void TwoWattMeter_mcp3208::begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1, uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2, float _ICAL1,  float _VCAL1, float _ICAL2,  float _VCAL2)
+void TwoWattMeter_mcp3208::begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1,\
+				 uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2,\
+				  int8_t _PHASECAL, SensorArray * _Sarr)
 {
+  
   inPinI1 = _inPinI1;
   mcpI1   = _mcpI1;
   inPinV1 = _inPinV1;
@@ -688,19 +691,26 @@ void TwoWattMeter_mcp3208::begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPi
   mcpI2   = _mcpI2;
   inPinV2 = _inPinV2;
   mcpV2   = _mcpV2;
-  offsetI1 = ADC_COUNTS >> 1; //divide by 2
-  offsetV1 = ADC_COUNTS >> 1;
-  offsetI2 = ADC_COUNTS >> 1; //divide by 2
-  offsetV2 = ADC_COUNTS >> 1;
-
-  V1_RATIO = _VCAL1 * ((ADC_REF / 1000.0) / (ADC_COUNTS));
-  I1_RATIO = _ICAL1 * ((ADC_REF / 1000.0) / (ADC_COUNTS));
-  V2_RATIO = _VCAL2 * ((ADC_REF / 1000.0) / (ADC_COUNTS));
-  I2_RATIO = _ICAL2 * ((ADC_REF / 1000.0) / (ADC_COUNTS));
+  
+  PHASECAL = _PHASECAL;
+  
+  Sarr = _Sarr;
+  
+  
 }
 
 void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
 {
+
+ float offsetI1 = Sarr->Offset[inPinI1 + mcp_to_index(mcpI1)*8];
+  float offsetV1 = Sarr->Offset[inPinV1 + mcp_to_index(mcpV1)*8];
+  float I1_RATIO = Sarr->Ratio[inPinI1 + mcp_to_index(mcpI1)*8];
+  float V1_RATIO = Sarr->Ratio[inPinV1 + mcp_to_index(mcpV1)*8];
+  
+  float offsetI2 = Sarr->Offset[inPinI2 + mcp_to_index(mcpI2)*8];
+  float offsetV2 = Sarr->Offset[inPinV2 + mcp_to_index(mcpV2)*8];
+  float I2_RATIO = Sarr->Ratio[inPinI2 + mcp_to_index(mcpI2)*8];
+  float V2_RATIO = Sarr->Ratio[inPinV2 + mcp_to_index(mcpV2)*8];
 
   float sumI1 = 0;
   float sumV1 = 0;
@@ -708,18 +718,45 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
   float sumI2 = 0;
   float sumV2 = 0;
   float sumP2 = 0;
+
   float centredI1, centredV1;
   uint16_t sampleI1, sampleV1;
   float centredI2, centredV2;
   uint16_t sampleI2, sampleV2;
 
+
   unsigned long timer1 = micros();
   uint8_t tc = 0; // time check boolean
   //unsigned long dt;
-
-
+  
+   // Building the array holding the samples to delay
+  uint8_t ABS_PHASECAL = abs(PHASECAL);
+  uint16_t *PHarray_1 = new uint16_t[ABS_PHASECAL];
+  uint16_t *PHarray_2 = new uint16_t[ABS_PHASECAL];
+  
   uint16_t i = 0; // index of samples
+  int8_t j = 0; // index of items in phase array
 
+  // If PHASECAL is not null then we start storing V or I
+  if (PHASECAL != 0){
+    while (j < ABS_PHASECAL){
+      if ((micros() - timer1) > sInterval) {
+  	 timer1 += sInterval;
+  	 
+         if (PHASECAL>0){
+           PHarray_1[j] = read_MCP3208_atmega328(inPinV1, mcpV1);
+           PHarray_2[j] = read_MCP3208_atmega328(inPinV2, mcpV2);
+         }
+         else {
+           PHarray_1[j] = read_MCP3208_atmega328(inPinI1, mcpI1);
+           PHarray_2[j] = read_MCP3208_atmega328(inPinI2, mcpI2);
+         }
+  	 j++;
+      } // if timer
+    }// while
+  } // if PHASECAL 
+
+  j = 0;
   while (i < NUMBER_OF_SAMPLES) {
     //for (unsigned int n = 0; n < NUMBER_OF_SAMPLES; n++)
     if ((micros() - timer1) > sInterval) {
@@ -738,6 +775,7 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
         err = 2;
         //return;
       }
+      
 
       // IIR Low pass filter to center waveform,
       // alfa = 1/1024 => fc ~ 0.2Hz
@@ -745,23 +783,48 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
       offsetI1 = offsetI1 + (sampleI1 - offsetI1) * offset_filter;
       offsetV2 = offsetV2 + (sampleV2 - offsetV2) * offset_filter;
       offsetI2 = offsetI2 + (sampleI2 - offsetI2) * offset_filter;
+      
+	// We only substract the previously computed offset to avoid introducing noise.
+      if (PHASECAL == 0) {
+      	centredV1 = sampleV1 - offsetV1;
+      	centredI1 = sampleI1 - offsetI1;
+      	centredV2 = sampleV2 - offsetV2;
+      	centredI2 = sampleI2 - offsetI2;
+      	
+      }
+      else if (PHASECAL > 0){
+      	centredV1 = PHarray_1[j] - offsetV1; // Use the old value in PHarray
+      	centredI1 = sampleI1 - offsetI1;
+      	centredV2 = PHarray_2[j] - offsetV2; // Use the old value in PHarray
+      	centredI2 = sampleI2 - offsetI2;
+      	
+      	PHarray_1[j] = sampleV1; // Replace the value in PHarray
+      	PHarray_2[j] = sampleV2;
+      	
+      }
+      else {
+      	centredV1 = sampleV1 - offsetV1;
+      	centredI1 = PHarray_1[j] - offsetI1;
+      	centredV2 = sampleV2 - offsetV2;
+      	centredI2 = PHarray_2[j] - offsetI2;
+      	
+      	PHarray_1[j] = sampleI1;
+      	PHarray_2[j] = sampleI2;
+      	
+      }
+      
+      i++;
+      j++;
+      if (j==ABS_PHASECAL) j=0;
+      
 
-      // We only substract the previously computed offset to avoid introducing noise.
-      centredV1 = sampleV1 - offsetV1;
-      centredI1 = sampleI1 - offsetI1;
-      centredV2 = sampleV2 - offsetV2;
-      centredI2 = sampleI2 - offsetI2;
-
-      // Root-mean-square method current
-
+      // Root-mean-square method 
       sumP1 += centredV1 * centredI1;
       sumI1 += centredI1 * centredI1;
       sumV1 += centredV1 * centredV1;
       sumP2 += centredV2 * centredI2;
       sumI2 += centredI2 * centredI2;
       sumV2 += centredV2 * centredV2;
-
-      i++;
 
 
 
@@ -774,17 +837,32 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
     } // if
     else tc = 0; // We need to come here at least once to validate timing.
   } //while
+  
+  delete [] PHarray_1;
+  delete [] PHarray_2;
 
   V1rms = V1_RATIO * sqrt(sumV1 / NUMBER_OF_SAMPLES);
   I1rms = I1_RATIO * sqrt(sumI1 / NUMBER_OF_SAMPLES);
-  W1 = V1_RATIO * I1_RATIO * sumP1 / NUMBER_OF_SAMPLES;
+  P1 = V1_RATIO * I1_RATIO * sumP1 / NUMBER_OF_SAMPLES;
 
   V2rms = V2_RATIO * sqrt(sumV2 / NUMBER_OF_SAMPLES);
   I2rms = I2_RATIO * sqrt(sumI2 / NUMBER_OF_SAMPLES);
-  W2 = V2_RATIO * I2_RATIO * sumP2 / NUMBER_OF_SAMPLES;
+  P2 = V2_RATIO * I2_RATIO * sumP2 / NUMBER_OF_SAMPLES;
+
 
   err = 0;
   //return err;
+  
+  Sarr->Offset[inPinI1 + mcp_to_index(mcpI1)*8] = offsetI1;
+  Sarr->Offset[inPinV1 + mcp_to_index(mcpV1)*8] = offsetV1;
+  //Sarr->Ratio[inPinI1 + mcp_to_index(mcpI1)*8] = I1_RATIO;
+  //Sarr->Ratio[inPinV1 + mcp_to_index(mcpV1)*8] = V1_RATIO;
+  
+  Sarr->Offset[inPinI2 + mcp_to_index(mcpI2)*8] = offsetI2;
+  Sarr->Offset[inPinV2 + mcp_to_index(mcpV2)*8] = offsetV2;
+  //Sarr->Ratio[inPinI2 + mcp_to_index(mcpI2)*8] = I2_RATIO;
+  //Sarr->Ratio[inPinV2 + mcp_to_index(mcpV2)*8] = V2_RATIO;
+  
 }
 
 

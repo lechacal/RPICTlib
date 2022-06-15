@@ -1,5 +1,5 @@
 // RPICTlib library
-// Version 1.5.0
+// Version 1.5.2
 // January 2022
 // LeChacal.com
 //
@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_5_1
+#define RPICTlib_1_5_2
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
@@ -346,7 +346,9 @@ class TwoWattMeter_mcp3208
     // _mcpV: Chip Select pin for the mcp3208 for voltage.
     // _ICAL: Calibration Coefficient for the current waveform.
     // _VCAL: Calibration Coefficient for the voltage waveform.
-    void begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1, uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2, float _ICAL1,  float _VCAL1, float _ICAL2,  float _VCAL2);
+    void begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1,\
+    		 uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2,\
+    		 int8_t _PHASECAL, SensorArray * _Sarr);
     // calcVI
     // Computes Real Power and relative values
     // NUMBER_OF_SAMPLES: How many samples are used.
@@ -355,13 +357,15 @@ class TwoWattMeter_mcp3208
     void calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval);
 
 
-    float I1rms, V1rms, I2rms, V2rms, W1, W2;
+    float I1rms, V1rms, I2rms, V2rms, P1, P2;
     uint8_t err;
     uint8_t inPinI1, mcpI1, inPinV1, mcpV1;
     uint8_t inPinI2, mcpI2, inPinV2, mcpV2;
-    int8_t PHASECAL1, PHASECAL2;
-    float offsetI1, offsetV1, offsetI2, offsetV2;
-    float I1_RATIO, V1_RATIO, I2_RATIO, V2_RATIO;
+    int8_t PHASECAL;
+    //float offsetI1, offsetV1, offsetI2, offsetV2, offsetI3, offsetV3;
+    //float I1_RATIO, V1_RATIO, I2_RATIO, V2_RATIO, I3_RATIO, V3_RATIO;
+   private:
+  	SensorArray * Sarr;
 
 };
 
