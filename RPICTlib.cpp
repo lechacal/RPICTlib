@@ -853,6 +853,7 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
   //Sarr->Ratio[inPinI2 + mcp_to_index(mcpI2)*8] = I2_RATIO;
   //Sarr->Ratio[inPinV2 + mcp_to_index(mcpV2)*8] = V2_RATIO;
   
+  
 }
 
 

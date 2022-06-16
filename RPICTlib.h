@@ -1,5 +1,5 @@
 // RPICTlib library
-// Version 1.5.2
+// Version 1.5.3
 // January 2022
 // LeChacal.com
 //
@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_5_2
+#define RPICTlib_1_5_3
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
