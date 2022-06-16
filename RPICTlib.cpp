@@ -1,5 +1,5 @@
 // RPICTlib library
-// Version 1.5.0
+// Version 1.5.3
 // October 2021
 // LeChacal.com
 //
@@ -66,6 +66,7 @@ void SignalNode::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   
   uint8_t tc = 0; // time check boolean
 
+  err = 0;
   while (i < NUMBER_OF_SAMPLES) {
     if ((micros() - timer1) > sInterval) {
       timer1 += sInterval;
@@ -93,9 +94,6 @@ void SignalNode::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   } //while
 
   RMS = RATIO * sqrt(sum / NUMBER_OF_SAMPLES);
- 
-  err = 0;
-  //return;
   
   Sarr->Offset[inPin] = offset;
 }
@@ -157,6 +155,7 @@ void PowerNode::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
     }// while
   } // if PHASECAL 
 
+  err = 0;
   j = 0;
   while (i < NUMBER_OF_SAMPLES) {
     //for (unsigned int n = 0; n < NUMBER_OF_SAMPLES; n++)
@@ -216,9 +215,6 @@ void PowerNode::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   Vrms = V_RATIO * sqrt(sumV / NUMBER_OF_SAMPLES);
   Irms = I_RATIO * sqrt(sumI / NUMBER_OF_SAMPLES);
   realPower = V_RATIO * I_RATIO * sumP / NUMBER_OF_SAMPLES;
-
-  err = 0;
-  //return err;
   
   Sarr->Offset[inPinI] = offsetI;
   Sarr->Offset[inPinV] = offsetV;
@@ -358,7 +354,7 @@ void SignalNode_mcp3208::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   
   uint16_t i=0;
   
-
+  err = 0;
   while (i < NUMBER_OF_SAMPLES) {
     if ((micros() - timer1) > sInterval) {
       timer1 += sInterval;
@@ -387,9 +383,6 @@ void SignalNode_mcp3208::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   } //while
 
   RMS = RATIO * sqrt(sum / NUMBER_OF_SAMPLES);
-
-  err = 0;
-  //return err;
   
   Sarr->Offset[inPin + mcp_to_index(mcp)*8] = offset;
 }
@@ -458,6 +451,7 @@ void PowerNode_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
     }// while
   } // if PHASECAL 
 
+  err = 0;
   j = 0;
   while (i < NUMBER_OF_SAMPLES) {
     //for (unsigned int n = 0; n < NUMBER_OF_SAMPLES; n++)
@@ -522,8 +516,6 @@ void PowerNode_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   Vrms = V_RATIO * sqrt(sumV / NUMBER_OF_SAMPLES);
   Irms = I_RATIO * sqrt(sumI / NUMBER_OF_SAMPLES);
   realPower = V_RATIO * I_RATIO * sumP / NUMBER_OF_SAMPLES;
-
-  err = 0;
   
   Sarr->Offset[inPinI + mcp_to_index(mcpI)*8] = offsetI;
   Sarr->Offset[inPinV + mcp_to_index(mcpV)*8] = offsetV;
@@ -756,6 +748,7 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
     }// while
   } // if PHASECAL 
 
+  err = 0;
   j = 0;
   while (i < NUMBER_OF_SAMPLES) {
     //for (unsigned int n = 0; n < NUMBER_OF_SAMPLES; n++)
@@ -849,9 +842,6 @@ void TwoWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval
   I2rms = I2_RATIO * sqrt(sumI2 / NUMBER_OF_SAMPLES);
   P2 = V2_RATIO * I2_RATIO * sumP2 / NUMBER_OF_SAMPLES;
 
-
-  err = 0;
-  //return err;
   
   Sarr->Offset[inPinI1 + mcp_to_index(mcpI1)*8] = offsetI1;
   Sarr->Offset[inPinV1 + mcp_to_index(mcpV1)*8] = offsetV1;
@@ -971,6 +961,7 @@ void ThreeWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterv
     }// while
   } // if PHASECAL 
 
+  err = 0;
   j = 0;
   while (i < NUMBER_OF_SAMPLES) {
     //for (unsigned int n = 0; n < NUMBER_OF_SAMPLES; n++)
@@ -1082,9 +1073,6 @@ void ThreeWattMeter_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterv
   I3rms = I3_RATIO * sqrt(sumI3 / NUMBER_OF_SAMPLES);
   P3 = V3_RATIO * I3_RATIO * sumP3 / NUMBER_OF_SAMPLES;
 
-
-  err = 0;
-  //return err;
   
   Sarr->Offset[inPinI1 + mcp_to_index(mcpI1)*8] = offsetI1;
   Sarr->Offset[inPinV1 + mcp_to_index(mcpV1)*8] = offsetV1;
