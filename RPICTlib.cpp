@@ -226,7 +226,7 @@ float linterp(uint16_t y, uint32_t dx, uint16_t y0, uint16_t y1) {
   // function edited and optimised specifically for our purpose here.
   // Does not apply to the general case
   // x0 is zero here.
-  return (float) (dx * (y - y0)) / (y1 - y0);
+  return (float) dx * ((float)y - (float)y0) / ((float)y1 - (float)y0);
 }
 
 #if defined __AVR_ATmega328P__
@@ -632,7 +632,7 @@ void FrequencyNode_mcp3208::calcFreq( uint16_t xpT)
       tb = timeR1;
       tb_delta = linterp( offset, (timeR2 - timeR1), sampleR1, sampleR2);
 
-      T = tb + tb_delta - ta - ta_delta;
+      T = (float)(tb - ta) + tb_delta - ta_delta;
       break;
     }
     else {
@@ -640,7 +640,7 @@ void FrequencyNode_mcp3208::calcFreq( uint16_t xpT)
       sampleR1 = sampleR2;
     }
 
-    if ((timeR2 - timer1) > (xpT + xpT / 2)) { // Exit if we've been waiting more than 1.5 * period.
+    if ((timeR2 - timer1) > (xpT*1.5)) { // Exit if we've been waiting more than 1.5 * period.
       err = 6;
       return;
 
