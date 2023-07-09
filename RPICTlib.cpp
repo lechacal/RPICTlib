@@ -43,19 +43,19 @@ void adc_definition(uint8_t bits, uint16_t vref)
 	ADC_REF = vref;
 }
 
-void SignalNode::begin(uint8_t _inPin, SensorArray * _Sarr)
+void SignalNode::begin(uint8_t _inPin, float _CAL)
 {
   inPin = _inPin;
-  //offset = ADC_COUNTS>>1; //divide by 2 
-  //RATIO = _CAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
-  Sarr = _Sarr;
+  offset = ADC_COUNTS>>1; //divide by 2 
+  RATIO = _CAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
+  //Sarr = _Sarr;
 }
 
 void SignalNode::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
 {
 
-  float offset = Sarr->Offset[inPin];
-  float RATIO = Sarr->Ratio[inPin];
+  //float offset = Sarr->Offset[inPin];
+  //float RATIO = Sarr->Ratio[inPin];
 
   float sum = 0;
   float centred;
@@ -95,31 +95,31 @@ void SignalNode::calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
 
   RMS = RATIO * sqrt(sum / NUMBER_OF_SAMPLES);
   
-  Sarr->Offset[inPin] = offset;
+  //Sarr->Offset[inPin] = offset;
 }
 
 
 
-void PowerNode::begin(uint8_t _inPinI, uint8_t _inPinV, int8_t _PHASECAL, SensorArray * _Sarr)
+void PowerNode::begin(uint8_t _inPinI, uint8_t _inPinV, float _ICAL, float _VCAL, int8_t _PHASECAL)
 {
   inPinI = _inPinI;
   inPinV = _inPinV;
-  //offsetI = ADC_COUNTS>>1; //divide by 2 
-  //offsetV = ADC_COUNTS>>1;
+  offsetI = ADC_COUNTS>>1; //divide by 2 
+  offsetV = ADC_COUNTS>>1;
   PHASECAL = _PHASECAL;
-  Sarr = _Sarr;
-  //V_RATIO = _VCAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
-  //I_RATIO = _ICAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
+  //Sarr = _Sarr;
+  V_RATIO = _VCAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
+  I_RATIO = _ICAL * ((ADC_REF / 1000.0) / (ADC_COUNTS));
 
 }
 
 void PowerNode::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
 {
 
-  float offsetI = Sarr->Offset[inPinI];
-  float offsetV = Sarr->Offset[inPinV];
-  float I_RATIO = Sarr->Ratio[inPinI];
-  float V_RATIO = Sarr->Ratio[inPinV];
+  //float offsetI = Sarr->Offset[inPinI];
+  //float offsetV = Sarr->Offset[inPinV];
+  //float I_RATIO = Sarr->Ratio[inPinI];
+  //float V_RATIO = Sarr->Ratio[inPinV];
 
   float sumI = 0;
   float sumV = 0;
@@ -216,8 +216,8 @@ void PowerNode::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
   Irms = I_RATIO * sqrt(sumI / NUMBER_OF_SAMPLES);
   realPower = V_RATIO * I_RATIO * sumP / NUMBER_OF_SAMPLES;
   
-  Sarr->Offset[inPinI] = offsetI;
-  Sarr->Offset[inPinV] = offsetV;
+  //Sarr->Offset[inPinI] = offsetI;
+  //Sarr->Offset[inPinV] = offsetV;
 }
 
 

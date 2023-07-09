@@ -200,7 +200,8 @@ class SignalNode
       	// begin
 	// _inPinI: Current channel.
 	// _ICAL: Calibration Coefficient for the current waveform.
-	void begin(uint8_t _inPin, SensorArray * _Sarr);
+	//void begin(uint8_t _inPin, SensorArray * _Sarr);
+	void begin(uint8_t _inPin, float _CAL);
 	// calcIrms
 	// Computes Irms only
 	// NUMBER_OF_SAMPLES: How many samples are used.
@@ -213,8 +214,8 @@ class SignalNode
 	int inPin;
 	float offset;
 	float RATIO;
-  private:
-  	SensorArray * Sarr;
+  //private:
+  	//SensorArray * Sarr;
 };
 
 class PowerNode
@@ -228,7 +229,8 @@ class PowerNode
 	// _ICAL: Calibration Coefficient for the current waveform.
 	// _VCAL: Calibration Coefficient for the voltage waveform.
 	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
-	void begin(uint8_t _inPinI, uint8_t _inPinV, int8_t _PHASECAL, SensorArray * _Sarr);
+	//void begin(uint8_t _inPinI, uint8_t _inPinV, int8_t _PHASECAL, SensorArray * _Sarr);
+	void begin(uint8_t _inPinI, uint8_t _inPinV, float _ICAL, float _VCAL, int8_t _PHASECAL);
 	// calcVI
 	// Computes Real Power and relative values
 	// NUMBER_OF_SAMPLES: How many samples are used.
@@ -242,8 +244,8 @@ class PowerNode
 	int8_t PHASECAL;
 	float offsetI, offsetV;
 	float I_RATIO, V_RATIO;
-  private:
-  	SensorArray * Sarr;
+  //private:
+  	//SensorArray * Sarr;
 };
 
 // CurrentNode_mcp328
