@@ -1,6 +1,6 @@
 // RPICTlib library
-// Version 1.6.0
-// January 2022
+// Version 1.6.1
+// January 2024
 // LeChacal.com
 //
 // This is free and unencumbered software released into the public domain.
@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_6_0
+#define RPICTlib_1_6_1
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
@@ -334,6 +334,37 @@ class FrequencyNode_mcp3208
 	float T;
   private:
   	SensorArray * Sarr;
+
+};
+
+// FrequencyNode_mcp328
+// Class to compute frequency value from a MCP3208.
+
+class FrequencyNode
+{
+  public:
+  	// begin
+	// _inPinI: Current channel.
+	// _mcpI: Chip Select pin for the mcp3208 for current.
+	// _inPinV: Voltage channel.
+	// _mcpV: Chip Select pin for the mcp3208 for voltage.
+	// _ICAL: Calibration Coefficient for the current waveform.
+	// _VCAL: Calibration Coefficient for the voltage waveform.
+	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
+	void begin(uint8_t _inPinI);
+	
+	// calcFreq
+	// Compute Frequency using Zero Crossing method
+	// Expected Frequency must be provided for timeouts.
+	// Frequency will be computed against Voltage port.
+	// Only the period is given in variable T.
+	void calcFreq( uint16_t xpT);
+	uint8_t err;
+	uint8_t inPin, mcp;
+	float T;
+	float offset;
+  private:
+  	
 
 };
 

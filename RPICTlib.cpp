@@ -1,6 +1,6 @@
 // RPICTlib library
-// Version 1.6.0
-// October 2021
+// Version 1.6.1
+// January 2024
 // LeChacal.com
 //
 // This is free and unencumbered software released into the public domain.
@@ -527,6 +527,145 @@ void PowerNode_mcp3208::calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval)
 
 }
 
+void FrequencyNode::begin(uint8_t _inPin)
+{
+  inPin = _inPin;
+
+}
+
+void FrequencyNode::calcFreq( uint16_t xpT)
+{
+
+  offset = ADC_COUNTS >> 1;
+
+  uint32_t timeR1, timeR2, ta, tb;
+  float ta_delta, tb_delta;
+  uint16_t sampleR1, sampleR2;
+  uint8_t sign_1, sign_2;
+  const uint16_t Threshold = ADC_COUNTS / 20;
+
+  //uint16_t YY[6];
+  //uint32_t TT[6];
+
+  uint32_t timer1 = micros();
+  // ------------
+  // First loop. Looking for a distinct polarity
+  // ------------
+  while (1) {
+    sampleR1 = analogRead(inPin);
+    timeR1 = micros();
+    if (sampleR1 > (offset + Threshold) or sampleR1 < (offset - Threshold)) {
+      sign_1 = (sampleR1 > offset);
+      break;
+    }
+
+    if ((timeR1 - timer1) > xpT) { // Exit if we've been waiting more than a period.
+      err = 3;
+      return;
+    }
+  }
+  timer1 = micros();
+  //TT[0] = timeR1;
+  //YY[0] = sampleR1;
+
+  // ------------
+  // Second loop. Looking for the first Zero Crossing.
+  // ------------
+  while (1) {
+    sampleR2 = analogRead(inPin);
+    timeR2 = micros();
+    sign_2 = (sampleR2 > offset);
+    if (sign_1 != sign_2) {
+      ta = timeR1;
+      ta_delta = linterp( offset, (timeR2 - timeR1), sampleR1, sampleR2);
+
+      break;
+    }
+    else {
+      timeR1 = timeR2;
+      sampleR1 = sampleR2;
+    }
+
+    if ((timeR2 - timer1) > xpT) { // Exit if we've been waiting more than a period.
+      err = 4;
+      return;
+ 
+    }
+
+  }
+  timer1 = ta + (uint32_t) ta_delta;
+  //TT[1] = timeR1;
+  //YY[1] = sampleR1;
+  //TT[2] = timeR2;
+  //YY[2] = sampleR2;
+
+  // ------------
+  // Third loop. Waiting for the polarity change. Mid wave.
+  // ------------
+  uint8_t cnt = 3; // we need at least 3 samples to confirm solidly
+  while (1) {
+    sampleR1 = analogRead(inPin);
+    timeR1 = micros();
+    sign_1 = (sampleR1 > offset);
+    if (sign_1 != sign_2) {
+      cnt --;
+      if (cnt == 0)break;
+    }
+
+    if ((timeR1 - timer1) > xpT) { // Exit if we've been waiting more than a period.
+      err = 5;
+      return;
+    }
+  }
+  //TT[3] = timeR1;
+  //YY[3] = sampleR1;
+
+  // ------------
+  // forth loop. Looking for the second zero crossing.
+  // ------------
+  while (1) {
+    sampleR2 = analogRead(inPin);
+    timeR2 = micros();
+    sign_2 = (sampleR2 > offset);
+    if (sign_1 != sign_2) {
+      tb = timeR1;
+      tb_delta = linterp( offset, (timeR2 - timeR1), sampleR1, sampleR2);
+
+      T = (float)(tb - ta) + tb_delta - ta_delta;
+      break;
+    }
+    else {
+      timeR1 = timeR2;
+      sampleR1 = sampleR2;
+    }
+
+    if ((timeR2 - timer1) > (xpT*1.5)) { // Exit if we've been waiting more than 1.5 * period.
+      err = 6;
+      return;
+
+    }
+
+  } // while
+   
+  err = 0;
+  
+  //TT[4] = timeR1;
+  //YY[4] = sampleR1;
+  //TT[5] = timeR2;
+  //YY[5] = sampleR2;
+
+  //  for (uint8_t i=0; i<6; i++){
+  //    Serial.print(TT[i]);
+  //    Serial.print('\t');
+  //    Serial.println(YY[i]);
+  //  }
+  
+  // Not needed. we do not update the offset with this function.
+  // Sarr->Offset[inPin + mcp_to_index(mcp)*8] = offset;
+ 
+}
+
+
 void FrequencyNode_mcp3208::begin(uint8_t _inPin, uint8_t _mcp, SensorArray * _Sarr)
 {
   inPin = _inPin;
@@ -665,8 +804,6 @@ void FrequencyNode_mcp3208::calcFreq( uint16_t xpT)
   // Sarr->Offset[inPin + mcp_to_index(mcp)*8] = offset;
  
 }
-
-
 
 
 

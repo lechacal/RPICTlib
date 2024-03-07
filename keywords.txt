@@ -8,8 +8,10 @@
 
 SignalNode	KEYWORD1
 PowerNode	KEYWORD1
+FrequencyNode   KEYWORD1
 SignalNode_mcp3208	KEYWORD1
 PowerNode_mcp3208	KEYWORD1
+FrequencyNode_mcp3208   KEYWORD1
 TwoWattMeter_mcp3208    KEYWORD1
 ThreeWattMeter_mcp3208  KEYWORD1
 
