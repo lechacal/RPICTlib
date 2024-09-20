@@ -1,6 +1,6 @@
 // RPICTlib library
-// Version 1.6.1
-// January 2024
+// Version 1.7.0
+// March 2024
 // LeChacal.com
 //
 // This is free and unencumbered software released into the public domain.
@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_6_1
+#define RPICTlib_1_7_0
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
@@ -61,7 +61,50 @@ extern float offset_filter;
 	#define MCP3208_08_OFF PORTB |= _BV(0);
 	#define MCP3208_09_ON PORTB &= ~_BV(1);
 	#define MCP3208_09_OFF PORTB |= _BV(1);
+	#define MASTER 10
+	#define SLAVE1 6
+	#define SLAVE2 7
+	#define SLAVE3 8
+	#define SLAVE4 9
+	
+	#define SS0_PIN PINB2
+	#define SS1_PIN PIND6
+	#define SS2_PIN PIND7
+	#define SS3_PIN PINB0
+	#define SS4_PIN PINB1
+
+#else if defined __AVR_DB__
+	#define MASTER_PIN 0
+	#define SLAVE1 6
+	#define SLAVE2 7
+	#define SLAVE3 8
+	#define SLAVE4 9
+	
+	#define SPI_PORT PORTC
+	#define MOSI_BIT 0
+	#define MISO_BIT 1
+	#define SCK_BIT 2
+	
+	#define MOSI_PIN PIN_PC0
+	#define MISO_PIN PIN_PC1
+	#define SCK_PIN PIN_PC2
+	
+	#define SS_PORT PORTF
+	#define SS1_BIT 2
+	#define SS2_BIT 3
+	#define SS3_BIT 4
+	#define SS4_BIT 5
+	#define SS1_PIN PIN_PF2
+	#define SS2_PIN PIN_PF3
+	#define SS3_PIN PIN_PF4
+	#define SS4_PIN PIN_PF5
+
 #endif
+
+
+
+#define CYCLE_CLOCK SPI_PORT.OUT |= _BV(SCK_BIT); SPI_PORT.OUT &= ~_BV(SCK_BIT);
+
 
 #define CH_TYPE_NONE 0
 #define CH_TYPE_REALPOWER 1
@@ -80,6 +123,7 @@ extern float offset_filter;
 #define CH_TYPE_3P_POWERFACTOR 14
 #define CH_TYPE_3P_VRMS 15
 #define CH_TYPE_3P_IRMS 16
+#define CH_TYPE_ERROR 17
 
 #define NODE_TYPE_SIGNAL 0
 #define NODE_TYPE_POWER 1
@@ -105,11 +149,7 @@ extern float offset_filter;
 #define ZMPT2 1
 #define ZMPT3 0
 
-#define MASTER 10
-#define SLAVE1 6
-#define SLAVE2 7
-#define SLAVE3 8
-#define SLAVE4 9
+
 
 #define KEY0 0x43 // 67
 #define KEY1 0x2D // 45
@@ -179,14 +219,17 @@ void adc_definition(uint8_t bits, uint16_t vref);
 // Linear interpolation function
 float linterp(uint16_t y, uint32_t dx, uint16_t y0, uint16_t y1);
 
-class SensorArray
+class AC_Sensor
 {
   public:
-  	float * Offset;
-  	float * Ratio;
-  	size_t size;
-  	void addMaster(float k0, float k1, float k2, float k3, float k4, float k5, float k6, float k7);
-  	void addSlave(float k0, float k1, float k2, float k3, float k4, float k5, float k6, float k7);
+  	float offset;
+  	float Ratio;
+  	uint8_t inPin;
+  	uint8_t level;
+  	
+  	void begin(uint8_t _inPin, uint8_t _level, float _CAL);
+  	void update_offset(uint16_t sample);
+  	
 
 };
 
@@ -201,7 +244,7 @@ class SignalNode
 	// _inPinI: Current channel.
 	// _ICAL: Calibration Coefficient for the current waveform.
 	//void begin(uint8_t _inPin, SensorArray * _Sarr);
-	void begin(uint8_t _inPin, float _CAL);
+	void begin(AC_Sensor * _Sensor);
 	// calcIrms
 	// Computes Irms only
 	// NUMBER_OF_SAMPLES: How many samples are used.
@@ -211,9 +254,8 @@ class SignalNode
 	
 	float RMS;
 	uint8_t err;
-	int inPin;
-	float offset;
-	float RATIO;
+	AC_Sensor * Sensor;
+	
   //private:
   	//SensorArray * Sarr;
 };
@@ -230,7 +272,7 @@ class PowerNode
 	// _VCAL: Calibration Coefficient for the voltage waveform.
 	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
 	//void begin(uint8_t _inPinI, uint8_t _inPinV, int8_t _PHASECAL, SensorArray * _Sarr);
-	void begin(uint8_t _inPinI, uint8_t _inPinV, float _ICAL, float _VCAL, int8_t _PHASECAL);
+	void begin(AC_Sensor * _SensorI, AC_Sensor * _SensorV, int8_t _PHASECAL);
 	// calcVI
 	// Computes Real Power and relative values
 	// NUMBER_OF_SAMPLES: How many samples are used.
@@ -240,105 +282,12 @@ class PowerNode
 	
 	float Irms, Vrms, realPower;
 	uint8_t err;
-	int inPinI, inPinV;
 	int8_t PHASECAL;
-	float offsetI, offsetV;
-	float I_RATIO, V_RATIO;
+	AC_Sensor * SensorI;
+	AC_Sensor * SensorV;
   //private:
   	//SensorArray * Sarr;
 };
-
-// CurrentNode_mcp328
-// Class to compute Irms only from a MCP3208.
-class SignalNode_mcp3208
-{
-  public:
-    	// begin
-	// _inPinI: Current channel.
-	// _mcpI: Chip Select pin for the mcp3208 for current.
-	// _ICAL: Calibration Coefficient for the current waveform.
-	void begin(uint8_t _inPin, uint8_t _mcp, SensorArray * _Sarr);
-	// calcIrms
-	// Computes Irms only
-	// NUMBER_OF_SAMPLES: How many samples are used.
-	// sInterval: Sampling interval.
-	// return: error number. 0 - No error. 1 - Can not cope with sInterval. 2 - Out of range reading.
-	void calcRMS(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval);
-	
-	float RMS;
-	uint8_t err;
-	uint8_t inPin, mcp;
-	int8_t PHASECAL;
-  
-  private:
-  	SensorArray * Sarr;
-
-};
-
-// PowerNode_mcp328
-// Class to compute Real Power and relative values from a MCP3208.
-
-class PowerNode_mcp3208
-{
-  public:
-  	// begin
-	// _inPinI: Current channel.
-	// _mcpI: Chip Select pin for the mcp3208 for current.
-	// _inPinV: Voltage channel.
-	// _mcpV: Chip Select pin for the mcp3208 for voltage.
-	// _ICAL: Calibration Coefficient for the current waveform.
-	// _VCAL: Calibration Coefficient for the voltage waveform.
-	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
-	void begin(uint8_t _inPinI, uint8_t _mcpI, uint8_t _inPinV,  uint8_t _mcpV,  int8_t _PHASECAL, SensorArray * _Sarr);
-	// calcVI
-	// Computes Real Power and relative values
-	// NUMBER_OF_SAMPLES: How many samples are used.
-	// sInterval: Sampling interval.
-	// return: error number. 0 - No error. 1 - Can not cope with sInterval. 2 - Out of range reading.
-	void calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval);
-	
-	float Irms, Vrms, realPower;
-	uint8_t err;
-	uint8_t inPinI, mcpI, inPinV, mcpV;
-	int8_t PHASECAL;
-
-
-  private:
-  	SensorArray * Sarr;
-};
-
-// FrequencyNode_mcp328
-// Class to compute frequency value from a MCP3208.
-
-class FrequencyNode_mcp3208
-{
-  public:
-  	// begin
-	// _inPinI: Current channel.
-	// _mcpI: Chip Select pin for the mcp3208 for current.
-	// _inPinV: Voltage channel.
-	// _mcpV: Chip Select pin for the mcp3208 for voltage.
-	// _ICAL: Calibration Coefficient for the current waveform.
-	// _VCAL: Calibration Coefficient for the voltage waveform.
-	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
-	void begin(uint8_t _inPinI, uint8_t _mcpI, SensorArray * Sarr);
-	
-	// calcFreq
-	// Compute Frequency using Zero Crossing method
-	// Expected Frequency must be provided for timeouts.
-	// Frequency will be computed against Voltage port.
-	// Only the period is given in variable T.
-	void calcFreq( uint16_t xpT);
-	uint8_t err;
-	uint8_t inPin, mcp;
-	float T;
-  private:
-  	SensorArray * Sarr;
-
-};
-
-// FrequencyNode_mcp328
-// Class to compute frequency value from a MCP3208.
 
 class FrequencyNode
 {
@@ -351,7 +300,7 @@ class FrequencyNode
 	// _ICAL: Calibration Coefficient for the current waveform.
 	// _VCAL: Calibration Coefficient for the voltage waveform.
 	// _PHASECAL: Calibration Coefficient for the phase delay between waveform.
-	void begin(uint8_t _inPinI);
+	void begin(AC_Sensor * _Sensor);
 	
 	// calcFreq
 	// Compute Frequency using Zero Crossing method
@@ -360,16 +309,15 @@ class FrequencyNode
 	// Only the period is given in variable T.
 	void calcFreq( uint16_t xpT);
 	uint8_t err;
-	uint8_t inPin, mcp;
+	AC_Sensor * Sensor;
 	float T;
-	float offset;
+
   private:
   	
 
 };
 
-
-class TwoWattMeter_mcp3208
+class ThreeWattMeter
 {
   public:
     // begin
@@ -379,66 +327,34 @@ class TwoWattMeter_mcp3208
     // _mcpV: Chip Select pin for the mcp3208 for voltage.
     // _ICAL: Calibration Coefficient for the current waveform.
     // _VCAL: Calibration Coefficient for the voltage waveform.
-    void begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1,\
-    		 uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2,\
-    		 int8_t _PHASECAL, SensorArray * _Sarr);
+    void begin(AC_Sensor * _SensorI1, AC_Sensor * _SensorV1,\
+				 AC_Sensor * _SensorI2, AC_Sensor * _SensorV2,\
+				 AC_Sensor * _SensorI3, AC_Sensor * _SensorV3,\
+				 int8_t _PHASECAL);
     // calcVI
     // Computes Real Power and relative values
     // NUMBER_OF_SAMPLES: How many samples are used.
     // sInterval: Sampling interval.
     // return: error number. 0 - No error. 1 - Can not cope with sInterval. 2 - Out of range reading.
     void calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval);
-
-
-    float I1rms, V1rms, I2rms, V2rms, P1, P2;
-    uint8_t err;
-    uint8_t inPinI1, mcpI1, inPinV1, mcpV1;
-    uint8_t inPinI2, mcpI2, inPinV2, mcpV2;
-    int8_t PHASECAL;
-    //float offsetI1, offsetV1, offsetI2, offsetV2, offsetI3, offsetV3;
-    //float I1_RATIO, V1_RATIO, I2_RATIO, V2_RATIO, I3_RATIO, V3_RATIO;
-   private:
-  	SensorArray * Sarr;
-
-};
-
-class ThreeWattMeter_mcp3208
-{
-  public:
-    // begin
-    // _inPinI: Current channel.
-    // _mcpI: Chip Select pin for the mcp3208 for current.
-    // _inPinV: Voltage channel.
-    // _mcpV: Chip Select pin for the mcp3208 for voltage.
-    // _ICAL: Calibration Coefficient for the current waveform.
-    // _VCAL: Calibration Coefficient for the voltage waveform.
-    void begin(uint8_t _inPinI1, uint8_t _mcpI1, uint8_t _inPinV1,  uint8_t _mcpV1,\
-    		 uint8_t _inPinI2, uint8_t _mcpI2, uint8_t _inPinV2,  uint8_t _mcpV2,\
-    		 uint8_t _inPinI3, uint8_t _mcpI3, uint8_t _inPinV3,  uint8_t _mcpV3,\
-    		 int8_t _PHASECAL, SensorArray * _Sarr);
-    // calcVI
-    // Computes Real Power and relative values
-    // NUMBER_OF_SAMPLES: How many samples are used.
-    // sInterval: Sampling interval.
-    // return: error number. 0 - No error. 1 - Can not cope with sInterval. 2 - Out of range reading.
-    void calcVI(uint16_t NUMBER_OF_SAMPLES, uint16_t sInterval);
-
+    AC_Sensor * SensorI1;
+    AC_Sensor * SensorI2;
+    AC_Sensor * SensorI3;
+    AC_Sensor * SensorV1;
+    AC_Sensor * SensorV2;
+    AC_Sensor * SensorV3;
 
     float I1rms, V1rms, I2rms, V2rms, I3rms, V3rms, P1, P2, P3;
     uint8_t err;
-    uint8_t inPinI1, mcpI1, inPinV1, mcpV1;
-    uint8_t inPinI2, mcpI2, inPinV2, mcpV2;
-    uint8_t inPinI3, mcpI3, inPinV3, mcpV3;
     int8_t PHASECAL;
     //float offsetI1, offsetV1, offsetI2, offsetV2, offsetI3, offsetV3;
     //float I1_RATIO, V1_RATIO, I2_RATIO, V2_RATIO, I3_RATIO, V3_RATIO;
-   private:
-  	SensorArray * Sarr;
+
+  	
 
 };
 
 
-
-
+uint16_t analog_sample_db32(uint8_t channel, uint8_t level);
 
 #endif
