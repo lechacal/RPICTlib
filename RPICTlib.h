@@ -1,6 +1,6 @@
 // RPICTlib library
-// Version 1.7.0
-// March 2024
+// Version 1.7.2
+// March 2025
 // LeChacal.com
 //
 // This is free and unencumbered software released into the public domain.
@@ -28,7 +28,7 @@
 // 
 // For more information, please refer to <http://unlicense.org/>
 
-#define RPICTlib_1_7_0
+#define RPICTlib_1_7_2
 
 #ifndef RPICTlib_h
 #define RPICTlib_h
@@ -73,7 +73,7 @@ extern float offset_filter;
 	#define SS3_PIN PINB0
 	#define SS4_PIN PINB1
 
-#else if defined __AVR_DB__
+#elif defined __AVR_DB__
 	#define MASTER_PIN 0
 	#define SLAVE1 6
 	#define SLAVE2 7

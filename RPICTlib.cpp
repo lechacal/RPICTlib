@@ -1,6 +1,6 @@
 // RPICTlib library
-// Version 1.7.0
-// March 2024
+// Version 1.7.2
+// March 2025
 // LeChacal.com
 //
 // This is free and unencumbered software released into the public domain.
@@ -62,11 +62,15 @@ void AC_Sensor::begin(uint8_t _inPin, uint8_t _level, float _CAL){
 		inPin = _inPin;
 		
 	}
+#elif _AVR_PINCOUNT == 28
+
+	inPin = _inPin + 13;
+		
 #else
 	inPin = _inPin;
 #endif	
 
-#else if defined __AVR_ATmega328P__
+#elif defined __AVR_ATmega328P__
 	inPin = _inPin;
 #endif
 
@@ -612,7 +616,7 @@ uint16_t analog_sample_db32(uint8_t channel, uint8_t level) {
 		return adc_val;
 	  }
 
-#else if defined __AVR_ATmega328P__
+#elif defined __AVR_ATmega328P__
 	uint8_t commandbits = 0b01100000 | ((channel & 0b111) << 2);
   
 	if (level == 10) {
